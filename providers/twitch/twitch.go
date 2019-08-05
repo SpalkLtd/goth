@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"fmt"
 
@@ -18,8 +17,8 @@ import (
 )
 
 const (
-	authURL      string = "https://api.twitch.tv/kraken/oauth2/authorize"
-	tokenURL     string = "https://api.twitch.tv/kraken/oauth2/token"
+	authURL      string = "https://id.twitch.tv/oauth2/authorize"
+	tokenURL     string = "https://id.twitch.tv/oauth2/token"
 	userEndpoint string = "https://api.twitch.tv/kraken/user"
 )
 
@@ -130,8 +129,9 @@ func (p *Provider) FetchUser(session goth.Session) (goth.User, error) {
 	if err != nil {
 		return user, err
 	}
-	req.Header.Set("Accept", "application/vnd.twitchtv.v3+json")
+	req.Header.Set("Accept", "application/vnd.twitchtv.v5+json")
 	req.Header.Set("Authorization", "OAuth "+s.AccessToken)
+	req.Header.Set("Client-ID", p.ClientKey)
 	resp, err := p.Client().Do(req)
 	if err != nil {
 		return user, err
@@ -154,7 +154,7 @@ func userFromReader(r io.Reader, user *goth.User) error {
 		Nickname      string       `json:"display_name"`
 		AvatarURL     string       `json:"logo"`
 		Description   string       `json:"bio"`
-		ID            int          `json:"_id"`
+		ID            string       `json:"_id"`
 	}{}
 
 	err := json.NewDecoder(r).Decode(&u)
@@ -173,7 +173,7 @@ func userFromReader(r io.Reader, user *goth.User) error {
 	user.Location = "No location is provided by the Twitch API"
 	user.AvatarURL = u.AvatarURL
 	user.Description = u.Description
-	user.UserID = strconv.Itoa(u.ID)
+	user.UserID = u.ID
 
 	return nil
 }
